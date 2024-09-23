@@ -562,6 +562,8 @@ compact(L) ->
 
 
 %% @private
+compact([], _Acc) ->
+    [];
 compact([E1|Es], Acc) ->
     compact(Es, Acc, E1).
 
