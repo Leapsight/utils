@@ -1,6 +1,6 @@
 [{<<"app_config">>,
   {git,"https://github.com/leapsight/app_config.git",
-       {ref,"01fa09bf6b7cac41b13a15552b6a9cc132acdaf4"}},
+       {ref,"6c4aee8fc3d08b59e22183a530cb4ce29d4b348b"}},
   0},
  {<<"base62">>,
   {git,"https://github.com/leapsight/base62.git",

@@ -1,6 +1,6 @@
 {application, utils,
  [{description, "An OTP library"},
-  {vsn, "1.4.0"},
+  {vsn, "1.4.2"},
   {registered, []},
   {applications,
    [kernel,
