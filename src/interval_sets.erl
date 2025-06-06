@@ -11,6 +11,7 @@
 -export([add_element/2]).
 -export([del_element/2]).
 -export([filter/2]).
+-export([flat_size/1]).
 -export([fold/3]).
 -export([from_list/1]).
 -export([intersection/1]).
@@ -20,16 +21,16 @@
 -export([is_empty/1]).
 -export([is_subset/2]).
 -export([is_type/1]).
+-export([keep_gt/2]).
+-export([max/1]).
+-export([min/1]).
 -export([new/0]).
 -export([size/1]).
--export([flat_size/1]).
 -export([subtract/2]).
--export([to_list/1]).
 -export([to_flat_list/1]).
+-export([to_list/1]).
 -export([union/1]).
 -export([union/2]).
--export([min/1]).
--export([max/1]).
 
 
 -ifdef(TEST).
@@ -326,8 +327,8 @@ union(Set1, Set2) ->
 % union([E1|Es1], [E2|_]=Set2) when E1 < E2 ->
 %     [E1|union(Es1, Set2)];
 % union([E1|_]=Set1, [E2|Es2]) when E1 > E2 ->
-%     [E2|union(Es2, Set1)];			% switch arguments!
-% union([E1|Es1], [_E2|Es2]) ->			%E1 == E2
+%     [E2|union(Es2, Set1)];            % switch arguments!
+% union([E1|Es1], [_E2|Es2]) ->         %E1 == E2
 %     [E1|union(Es1, Es2)];
 % union([], Es2) -> Es2;
 % union(Es1, []) -> Es1.
@@ -354,8 +355,8 @@ intersection(Set1, Set2) ->
 % intersection([E1|Es1], [E2|_]=Set2) when E1 < E2 ->
 %     intersection(Es1, Set2);
 % intersection([E1|_]=Set1, [E2|Es2]) when E1 > E2 ->
-%     intersection(Es2, Set1);			% switch arguments!
-% intersection([E1|Es1], [_E2|Es2]) ->		%E1 == E2
+%     intersection(Es2, Set1);          % switch arguments!
+% intersection([E1|Es1], [_E2|Es2]) ->      %E1 == E2
 %     [E1|intersection(Es1, Es2)];
 % intersection([], _) ->
 %     [];
@@ -392,8 +393,8 @@ is_disjoint(Set1, Set2) ->
 % is_disjoint([E1|Es1], [E2|_]=Set2) when E1 < E2 ->
 %     is_disjoint(Es1, Set2);
 % is_disjoint([E1|_]=Set1, [E2|Es2]) when E1 > E2 ->
-%     is_disjoint(Es2, Set1);			% switch arguments!
-% is_disjoint([_E1|_Es1], [_E2|_Es2]) ->		%E1 == E2
+%     is_disjoint(Es2, Set1);           % switch arguments!
+% is_disjoint([_E1|_Es1], [_E2|_Es2]) ->        %E1 == E2
 %     false;
 % is_disjoint([], _) ->
 %     true;
@@ -416,7 +417,7 @@ subtract(Set1, Set2) ->
 % subtract([E1|_]=Set1, [E2|Es2]) when E1 > E2 ->
 %     subtract(Set1, Es2);
 
-% subtract([_E1|Es1], [_E2|Es2]) ->		%E1 == E2
+% subtract([_E1|Es1], [_E2|Es2]) ->     %E1 == E2
 %     subtract(Es1, Es2);
 
 % subtract([], _) ->
@@ -435,11 +436,11 @@ subtract(Set1, Set2) ->
 is_subset(Set1, Set2) ->
     ordsets:is_subset(to_flat_list(Set1), to_flat_list(Set2)).
 
-% is_subset([E1|_], [E2|_]) when E1 < E2 ->	%E1 not in Set2
+% is_subset([E1|_], [E2|_]) when E1 < E2 -> %E1 not in Set2
 %     false;
 % is_subset([E1|_]=Set1, [E2|Es2]) when E1 > E2 ->
 %     is_subset(Set1, Es2);
-% is_subset([_E1|Es1], [_E2|Es2]) ->		%E1 == E2
+% is_subset([_E1|Es1], [_E2|Es2]) ->        %E1 == E2
 %     is_subset(Es1, Es2);
 % is_subset([], _) -> true;
 % is_subset(_, []) -> false.
@@ -468,6 +469,30 @@ fold(F, Acc, Set) ->
 
 filter(F, Set) ->
     lists:filter(F, Set).
+
+
+%% -----------------------------------------------------------------------------
+%% @doc
+%% @end
+%% -----------------------------------------------------------------------------
+-spec keep_gt(integer(), t()) -> t().
+
+
+keep_gt(N, [M | Rest])
+when is_integer(N), is_integer(M), N >= M ->
+    keep_gt(N, Rest);
+
+keep_gt(N, [{_, Max} | Rest])
+when is_integer(N), N >= Max ->
+    keep_gt(N, Rest);
+
+keep_gt(N, [{Min, Max} | Rest])
+when is_integer(N), N >= Min ->
+    [{N + 1, Max} | Rest];
+
+keep_gt(_N, Rest) ->
+    Rest.
+
 
 
 
@@ -1011,5 +1036,41 @@ del_element_test_() ->
         || {Expected, Element, Set} <- Cases
     ]).
 
+
+keep_gt_test_() ->
+    [
+        ?_assertEqual(
+            [1, 2, 4, 6, 7, 8, 9, 10],
+            keep_gt(0, [1, 2, 4, 6, 7, 8, 9, 10])
+        ),
+        ?_assertEqual(
+            [2, 4, 6, 7, 8, 9, 10],
+            keep_gt(1, [1, 2, 4, 6, 7, 8, 9, 10])
+        ),
+        ?_assertEqual(
+            [6, 7, 8, 9, 10],
+            keep_gt(4, [1, 2, 4, 6, 7, 8, 9, 10])
+        ),
+        ?_assertEqual(
+            [],
+            keep_gt(11, [1, 2, 4, 6, 7, 8, 9, 10])
+        ),
+        ?_assertEqual(
+            [{12, 100}],
+            keep_gt(11, [{1, 10}, {12, 100}])
+        ),
+        ?_assertEqual(
+            [{12, 100}],
+            keep_gt(11, [{1, 11}, {12, 100}])
+        ),
+        ?_assertEqual(
+            [{12, 100}],
+            keep_gt(11, [{1, 10}, 11, {12, 100}])
+        ),
+        ?_assertEqual(
+            [{51, 100}],
+            keep_gt(50, [{1, 10}, 11, {12, 100}])
+        )
+    ].
 
 -endif.
